@@ -2,6 +2,9 @@ import { useMemo } from 'react'
 import { FiTrendingUp, FiTrendingDown, FiDollarSign } from 'react-icons/fi'
 import useExpenseStore from '../stores/expenseStore'
 import categories from '../data/categories'
+import formatCurrency from '../utils/formatCurrency'
+import formatDate from '../utils/formatDate'
+import getCategoryLabel from '../utils/getCategoryLabel'
 
 function StatCard({ icon: Icon, label, value, tone }) {
   const toneStyles = {
