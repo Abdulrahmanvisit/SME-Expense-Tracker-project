@@ -8,6 +8,15 @@ import getCategoryLabel from '../utils/getCategoryLabel'
 
 const initialForm = { type: 'expense', amount: '', categoryId: '', description: '', date: '' }
 
+function safeText(value) {
+  return typeof value === 'string' ? value : ''
+}
+
+function safeNumber(value) {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? numericValue : 0
+}
+
 function formReducer(state, action) {
   switch (action.type) {
     case 'SET_FIELD':
@@ -40,13 +49,18 @@ function Expenses() {
   const expenses = useExpenseStore((state) => state.expenses)
 
   const filteredExpenses = useMemo(() => {
-    return expenses.filter((exp) => {
-      const matchesSearch =
-        exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getCategoryLabel(exp.categoryId).toLowerCase().includes(searchTerm.toLowerCase())
+    const normalizedSearch = safeText(searchTerm).trim().toLowerCase()
 
-      const matchesCategory = filterCategory ? exp.categoryId === filterCategory : true
-      const matchesDate = filterDate ? exp.date === filterDate : true
+    return expenses.filter((exp) => {
+      const description = safeText(exp?.description)
+      const categoryName = safeText(getCategoryLabel(exp?.categoryId))
+
+      const matchesSearch =
+        description.toLowerCase().includes(normalizedSearch) ||
+        categoryName.toLowerCase().includes(normalizedSearch)
+
+      const matchesCategory = filterCategory ? exp?.categoryId === filterCategory : true
+      const matchesDate = filterDate ? safeText(exp?.date) === filterDate : true
 
       return matchesSearch && matchesCategory && matchesDate
     })
@@ -58,14 +72,23 @@ function Expenses() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!form.amount || !form.categoryId || !form.date) return
+
+    const amountValue = safeNumber(form.amount)
+    if (!amountValue || !form.categoryId || !form.date) return
+
+    const nextExpense = {
+      ...form,
+      amount: amountValue,
+      description: safeText(form.description),
+    }
 
     if (editingId) {
-      updateExpense(editingId, { ...form, amount: Number(form.amount) })
+      updateExpense(editingId, nextExpense)
       setEditingId(null)
     } else {
-      addExpense({ id: uuidv4(), ...form, amount: Number(form.amount) })
+      addExpense({ id: uuidv4(), ...nextExpense })
     }
+
     dispatch({ type: 'RESET' })
   }
 
@@ -119,7 +142,7 @@ function Expenses() {
         </select>
         <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         {(searchTerm || filterCategory || filterDate) && (
-          <button onClick={clearFilters} className="sm:col-span-4 text-left text-sm text-indigo-600 hover:underline">
+          <button type="button" onClick={clearFilters} className="sm:col-span-4 text-left text-sm text-indigo-600 hover:underline">
             Clear filters
           </button>
         )}
@@ -134,11 +157,11 @@ function Expenses() {
             <span className={exp.type === 'income' ? 'text-emerald-600' : 'text-slate-700'}>
               {exp.type === 'income' ? '+' : '-'}{formatCurrency(exp.amount)}
             </span>
-            <span className="text-slate-600">{exp.description || 'No description'}</span>
+            <span className="text-slate-600">{safeText(exp.description) || 'No description'}</span>
             <span className="text-slate-500">{getCategoryLabel(exp.categoryId)} · {formatDate(exp.date)}</span>
             <span className="flex gap-2">
-              <button onClick={() => startEdit(exp)} className="text-indigo-600 hover:underline">Edit</button>
-              <button onClick={() => deleteExpense(exp.id)} className="text-red-600 hover:underline">Delete</button>
+              <button type="button" onClick={() => startEdit(exp)} className="text-indigo-600 hover:underline">Edit</button>
+              <button type="button" onClick={() => deleteExpense(exp.id)} className="text-red-600 hover:underline">Delete</button>
             </span>
           </li>
         ))}

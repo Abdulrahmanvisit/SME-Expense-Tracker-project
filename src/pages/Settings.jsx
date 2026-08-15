@@ -3,6 +3,7 @@ import useExpenseStore from '../stores/expenseStore'
 
 function Settings() {
   const expenses = useExpenseStore((state) => state.expenses)
+  const clearExpenses = useExpenseStore((state) => state.clearExpenses)
   const [confirmClear, setConfirmClear] = useState(false)
 
   const handleExport = () => {
@@ -16,8 +17,8 @@ function Settings() {
   }
 
   const handleClearAll = () => {
-    localStorage.removeItem('expenses')
-    window.location.reload()
+    clearExpenses()
+    setConfirmClear(false)
   }
 
   return (

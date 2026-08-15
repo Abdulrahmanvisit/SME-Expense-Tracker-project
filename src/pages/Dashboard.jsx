@@ -32,7 +32,20 @@ function Dashboard() {
   const balance = useExpenseStore((state) => state.getBalance())
 
   const recentExpenses = useMemo(() => {
-    return [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6)
+    const safeExpenses = Array.isArray(expenses) ? expenses.filter((exp) => exp && typeof exp === 'object') : []
+
+    return [...safeExpenses]
+      .sort((a, b) => {
+        const aTime = new Date(a.date).getTime()
+        const bTime = new Date(b.date).getTime()
+
+        if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0
+        if (Number.isNaN(aTime)) return 1
+        if (Number.isNaN(bTime)) return -1
+
+        return bTime - aTime
+      })
+      .slice(0, 6)
   }, [expenses])
 
   return (
@@ -54,19 +67,24 @@ function Dashboard() {
           <p className="py-6 text-center text-sm text-slate-500">No entries recorded yet. Add your first transaction on the Expenses page.</p>
         ) : (
           <div className="divide-y divide-slate-100">
-            {recentExpenses.map((exp) => (
-              <div key={exp.id} className="flex items-center justify-between py-3">
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{exp.description || 'No description'}</p>
-                  <p className="text-xs text-slate-500">
-                    {getCategoryLabel(exp.categoryId)} · {formatDate(exp.date)}
+            {recentExpenses.map((exp) => {
+              const amount = Number(exp.amount) || 0
+              const description = typeof exp.description === 'string' && exp.description.trim() ? exp.description : 'No description'
+
+              return (
+                <div key={exp.id} className="flex items-center justify-between py-3">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{description}</p>
+                    <p className="text-xs text-slate-500">
+                      {getCategoryLabel(exp.categoryId)} · {formatDate(exp.date)}
+                    </p>
+                  </div>
+                  <p className={`text-sm font-semibold ${exp.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {exp.type === 'income' ? '+' : '-'}{formatCurrency(amount)}
                   </p>
                 </div>
-                <p className={`text-sm font-semibold ${exp.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {exp.type === 'income' ? '+' : '-'}{formatCurrency(exp.amount)}
-                </p>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

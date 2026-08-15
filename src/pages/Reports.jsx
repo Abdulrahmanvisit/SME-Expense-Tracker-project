@@ -1,38 +1,62 @@
 import { useMemo } from 'react'
-import { format, parseISO } from 'date-fns'
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts'
 import useExpenseStore from '../stores/expenseStore'
 import categories from '../data/categories'
 import formatCurrency from '../utils/formatCurrency'
+import formatDate from '../utils/formatDate'
 
 const COLORS = ['#4f46e5', '#0ea5e9', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6', '#ec4899']
 
 function Reports() {
   const expenses = useExpenseStore((state) => state.expenses)
+  const safeExpenses = useMemo(
+    () => (Array.isArray(expenses) ? expenses.filter((exp) => exp && typeof exp === 'object') : []),
+    [expenses],
+  )
 
   const categoryData = useMemo(() => {
-    const onlyExpenses = expenses.filter((e) => e.type === 'expense')
-    const total = onlyExpenses.reduce((sum, e) => sum + e.amount, 0)
+    const onlyExpenses = safeExpenses.filter((e) => e.type === 'expense')
+    const total = onlyExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
 
     return categories
       .map((cat) => {
-        const value = onlyExpenses.filter((e) => e.categoryId === cat.id).reduce((sum, e) => sum + e.amount, 0)
+        const value = onlyExpenses
+          .filter((e) => e.categoryId === cat.id)
+          .reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
+
         return { name: cat.label, value, percent: total ? Math.round((value / total) * 100) : 0 }
       })
-      .filter((item) => item.value > 0)
+      .filter((item) => Number(item.value) > 0)
       .sort((a, b) => b.value - a.value)
-  }, [expenses])
+  }, [safeExpenses])
 
   const monthlyData = useMemo(() => {
     const totals = {}
-    expenses.forEach((exp) => {
-      if (!exp.date) return
+
+    safeExpenses.forEach((exp) => {
+      if (!exp.date || typeof exp.date !== 'string') return
+
       const key = exp.date.slice(0, 7)
-      if (!totals[key]) totals[key] = { key, label: format(parseISO(`${key}-01`), 'MMM yyyy'), income: 0, expense: 0 }
-      totals[key][exp.type] += exp.amount
+      if (!/^\d{4}-\d{2}$/.test(key)) return
+
+      const amount = Number(exp.amount)
+      if (!Number.isFinite(amount)) return
+
+      if (!totals[key]) {
+        totals[key] = {
+          key,
+          label: formatDate(`${key}-01`, 'MMM yyyy'),
+          income: 0,
+          expense: 0,
+        }
+      }
+
+      if (exp.type === 'income') totals[key].income += amount
+      else if (exp.type === 'expense') totals[key].expense += amount
     })
+
     return Object.values(totals).sort((a, b) => a.key.localeCompare(b.key))
-  }, [expenses])
+  }, [safeExpenses])
 
   return (
     <section className="space-y-6">
@@ -50,8 +74,8 @@ function Reports() {
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100}>
-                  {categoryData.map((_, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  {categoryData.map((item, index) => (
+                    <Cell key={item.name} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => formatCurrency(value)} />
