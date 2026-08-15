@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
+import { format, parseISO } from 'date-fns'
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts'
 import useExpenseStore from '../stores/expenseStore'
 import categories from '../data/categories'
+import formatCurrency from '../utils/formatCurrency'
 
 const COLORS = ['#4f46e5', '#0ea5e9', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6', '#ec4899']
 
@@ -10,62 +12,89 @@ function Reports() {
 
   const categoryData = useMemo(() => {
     const onlyExpenses = expenses.filter((e) => e.type === 'expense')
+    const total = onlyExpenses.reduce((sum, e) => sum + e.amount, 0)
+
     return categories
-      .map((cat) => ({
-        name: cat.label,
-        value: onlyExpenses.filter((e) => e.categoryId === cat.id).reduce((sum, e) => sum + e.amount, 0),
-      }))
+      .map((cat) => {
+        const value = onlyExpenses.filter((e) => e.categoryId === cat.id).reduce((sum, e) => sum + e.amount, 0)
+        return { name: cat.label, value, percent: total ? Math.round((value / total) * 100) : 0 }
+      })
       .filter((item) => item.value > 0)
+      .sort((a, b) => b.value - a.value)
   }, [expenses])
 
   const monthlyData = useMemo(() => {
     const totals = {}
     expenses.forEach((exp) => {
-      const month = exp.date?.slice(0, 7)
-      if (!month) return
-      if (!totals[month]) totals[month] = { month, income: 0, expense: 0 }
-      totals[month][exp.type] += exp.amount
+      if (!exp.date) return
+      const key = exp.date.slice(0, 7)
+      if (!totals[key]) totals[key] = { key, label: format(parseISO(`${key}-01`), 'MMM yyyy'), income: 0, expense: 0 }
+      totals[key][exp.type] += exp.amount
     })
-    return Object.values(totals).sort((a, b) => a.month.localeCompare(b.month))
+    return Object.values(totals).sort((a, b) => a.key.localeCompare(b.key))
   }, [expenses])
 
   return (
     <section className="space-y-6">
-      <h1 className="text-2xl font-semibold text-slate-900">Reports</h1>
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">Reports</h1>
+        <p className="mt-1 text-sm text-slate-500">Where your money is going, and how it changes over time.</p>
+      </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-5">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">Expenses by Category</h2>
-        {categoryData.length === 0 ? (
-          <p className="text-sm text-slate-500">No expense data yet.</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                {categoryData.map((_, index) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => `₦${value.toLocaleString()}`} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        )}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 lg:col-span-3">
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">Expenses by Category</h2>
+          {categoryData.length === 0 ? (
+            <p className="py-10 text-center text-sm text-slate-500">No expense data yet.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100}>
+                  {categoryData.map((_, index) => (
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-5 lg:col-span-2">
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">Breakdown</h2>
+          {categoryData.length === 0 ? (
+            <p className="text-sm text-slate-500">Nothing to show yet.</p>
+          ) : (
+            <ul className="space-y-3">
+              {categoryData.map((item, index) => (
+                <li key={item.name} className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-slate-700">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                    {item.name}
+                  </span>
+                  <span className="text-slate-500">{item.percent}%</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(item.value)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-5">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Income vs Expenses by Month</h2>
         {monthlyData.length === 0 ? (
-          <p className="text-sm text-slate-500">No data yet.</p>
+          <p className="py-10 text-center text-sm text-slate-500">No data yet.</p>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value) => `₦${value.toLocaleString()}`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip formatter={(value) => formatCurrency(value)} />
               <Legend />
-              <Bar dataKey="income" fill="#10b981" name="Income" />
-              <Bar dataKey="expense" fill="#ef4444" name="Expense" />
+              <Bar dataKey="income" fill="#10b981" name="Income" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="expense" fill="#ef4444" name="Expense" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

@@ -2,6 +2,9 @@ import { useReducer, useState, useMemo } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import categories from '../data/categories'
 import useExpenseStore from '../stores/expenseStore'
+import formatCurrency from '../utils/formatCurrency'
+import formatDate from '../utils/formatDate'
+import getCategoryLabel from '../utils/getCategoryLabel'
 
 const initialForm = { type: 'expense', amount: '', categoryId: '', description: '', date: '' }
 
@@ -40,7 +43,7 @@ function Expenses() {
     return expenses.filter((exp) => {
       const matchesSearch =
         exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        categories.find((c) => c.id === exp.categoryId)?.label.toLowerCase().includes(searchTerm.toLowerCase())
+        getCategoryLabel(exp.categoryId).toLowerCase().includes(searchTerm.toLowerCase())
 
       const matchesCategory = filterCategory ? exp.categoryId === filterCategory : true
       const matchesDate = filterDate ? exp.date === filterDate : true
@@ -82,12 +85,7 @@ function Expenses() {
       <h1 className="text-2xl font-semibold text-slate-900">Expenses</h1>
 
       <form onSubmit={handleSubmit} className="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">
-        <select
-          name="type"
-          value={form.type}
-          onChange={handleChange}
-          className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
+        <select name="type" value={form.type} onChange={handleChange} className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="expense">Expense</option>
           <option value="income">Income</option>
         </select>
@@ -113,22 +111,13 @@ function Expenses() {
           placeholder="Search by name or category"
           className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:col-span-2"
         />
-        <select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
+        <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="">All categories</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.label}</option>
           ))}
         </select>
-        <input
-          type="date"
-          value={filterDate}
-          onChange={(e) => setFilterDate(e.target.value)}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
+        <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         {(searchTerm || filterCategory || filterDate) && (
           <button onClick={clearFilters} className="sm:col-span-4 text-left text-sm text-indigo-600 hover:underline">
             Clear filters
@@ -143,10 +132,10 @@ function Expenses() {
         {filteredExpenses.map((exp) => (
           <li key={exp.id} className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3 text-sm">
             <span className={exp.type === 'income' ? 'text-emerald-600' : 'text-slate-700'}>
-              {exp.type === 'income' ? '+' : '-'}₦{exp.amount}
+              {exp.type === 'income' ? '+' : '-'}{formatCurrency(exp.amount)}
             </span>
             <span className="text-slate-600">{exp.description || 'No description'}</span>
-            <span className="text-slate-500">{categories.find((c) => c.id === exp.categoryId)?.label} · {exp.date}</span>
+            <span className="text-slate-500">{getCategoryLabel(exp.categoryId)} · {formatDate(exp.date)}</span>
             <span className="flex gap-2">
               <button onClick={() => startEdit(exp)} className="text-indigo-600 hover:underline">Edit</button>
               <button onClick={() => deleteExpense(exp.id)} className="text-red-600 hover:underline">Delete</button>

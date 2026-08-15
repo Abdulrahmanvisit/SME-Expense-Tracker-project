@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { FiTrendingUp, FiTrendingDown, FiDollarSign } from 'react-icons/fi'
 import useExpenseStore from '../stores/expenseStore'
-import categories from '../data/categories'
 import formatCurrency from '../utils/formatCurrency'
 import formatDate from '../utils/formatDate'
 import getCategoryLabel from '../utils/getCategoryLabel'
@@ -20,7 +19,7 @@ function StatCard({ icon: Icon, label, value, tone }) {
       </span>
       <div>
         <p className="text-sm text-slate-500">{label}</p>
-        <p className="mt-1 text-xl font-semibold text-slate-900">₦{value.toLocaleString()}</p>
+        <p className="mt-1 text-xl font-semibold text-slate-900">{formatCurrency(value)}</p>
       </div>
     </div>
   )
@@ -60,11 +59,11 @@ function Dashboard() {
                 <div>
                   <p className="text-sm font-medium text-slate-900">{exp.description || 'No description'}</p>
                   <p className="text-xs text-slate-500">
-                    {categories.find((c) => c.id === exp.categoryId)?.label} · {exp.date}
+                    {getCategoryLabel(exp.categoryId)} · {formatDate(exp.date)}
                   </p>
                 </div>
                 <p className={`text-sm font-semibold ${exp.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {exp.type === 'income' ? '+' : '-'}₦{exp.amount.toLocaleString()}
+                  {exp.type === 'income' ? '+' : '-'}{formatCurrency(exp.amount)}
                 </p>
               </div>
             ))}

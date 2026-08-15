@@ -1,5 +1,6 @@
 function formatCurrency(amount) {
-  return `₦${Number(amount).toLocaleString()}`;
+  const value = Number(amount) || 0
+  return `₦${value.toLocaleString()}`
 }
 
-export default formatCurrency;
+export default formatCurrency
