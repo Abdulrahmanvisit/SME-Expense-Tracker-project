@@ -137,8 +137,8 @@ function Expenses() {
     <section className="space-y-6">
       <h1 className="text-2xl font-semibold text-slate-900">Expenses</h1>
 
-      <form onSubmit={handleSubmit} className="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">
-        <select name="type" value={form.type} onChange={handleChange} className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <form onSubmit={handleSubmit} className="grid w-full gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">
+        <select name="type" value={form.type} onChange={handleChange} className="min-w-0 rounded-md border border-slate-300 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="expense">Expense</option>
           <option value="income">Income</option>
         </select>
@@ -153,12 +153,12 @@ function Expenses() {
             onChange={handleChange}
             placeholder="Amount"
             aria-label="Expense amount"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full min-w-0 rounded-md border border-slate-300 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <p className="mt-2 text-xs font-medium text-slate-500">Preview: {amountPreview}</p>
         </div>
 
-        <select name="categoryId" value={form.categoryId} onChange={handleChange} className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <select name="categoryId" value={form.categoryId} onChange={handleChange} className="min-w-0 rounded-md border border-slate-300 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="">Select category</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.label}</option>
@@ -172,7 +172,7 @@ function Expenses() {
             value={form.date}
             onChange={handleChange}
             aria-label="Expense date"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full min-w-0 rounded-md border border-slate-300 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           {dateError ? <p className="mt-2 text-xs font-medium text-red-600">{dateError}</p> : null}
         </div>
@@ -184,34 +184,34 @@ function Expenses() {
           onChange={handleChange}
           placeholder="Description"
           aria-label="Expense description"
-          className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:col-span-2"
+          className="min-w-0 rounded-md border border-slate-300 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:col-span-2"
         />
 
         <button
           type="submit"
           disabled={isSubmitDisabled}
-          className="sm:col-span-2 rounded-md bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="sm:col-span-2 rounded-md bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           {editingId ? 'Update Entry' : 'Add Entry'}
         </button>
       </form>
 
-      <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-4">
+      <div className="grid w-full gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-4">
         <input
           type="text"
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder="Search by name or category"
           aria-label="Search expenses"
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:col-span-2"
+          className="min-w-0 rounded-md border border-slate-300 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:col-span-2"
         />
-        <select value={filterCategory} onChange={(event) => setFilterCategory(event.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <select value={filterCategory} onChange={(event) => setFilterCategory(event.target.value)} className="min-w-0 rounded-md border border-slate-300 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="">All categories</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.label}</option>
           ))}
         </select>
-        <input type="date" value={filterDate} onChange={(event) => setFilterDate(event.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <input type="date" value={filterDate} onChange={(event) => setFilterDate(event.target.value)} className="min-w-0 rounded-md border border-slate-300 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         {(searchTerm || filterCategory || filterDate) && (
           <button type="button" onClick={clearFilters} className="sm:col-span-4 text-left text-sm text-indigo-600 hover:underline">
             Clear filters
@@ -224,16 +224,18 @@ function Expenses() {
           <p className="py-6 text-center text-sm text-slate-500">No entries match your search or filters.</p>
         )}
         {filteredExpenses.map((exp) => (
-          <li key={exp.id} className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3 text-sm">
-            <span className={exp.type === 'income' ? 'text-emerald-600' : 'text-slate-700'}>
+          <li key={String(exp.id)} className="flex w-full flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm">
+            <span className={`order-2 w-full text-slate-600 ${exp.type === 'income' ? 'text-emerald-600' : 'text-slate-700'} sm:order-1 sm:w-auto`}>
               {exp.type === 'income' ? '+' : '-'}{formatCurrency(exp.amount)}
             </span>
-            <span className="text-slate-600">{safeText(exp.description) || 'No description'}</span>
-            <span className="text-slate-500">{getCategoryLabel(exp.categoryId)} · {formatDate(exp.date)}</span>
-            <span className="flex gap-2">
+            <div className="min-w-0 flex-1 sm:order-2">
+              <p className="truncate text-sm font-medium text-slate-900">{safeText(exp.description) || 'No description'}</p>
+              <p className="mt-1 text-xs text-slate-500">{getCategoryLabel(exp.categoryId)} · {formatDate(exp.date)}</p>
+            </div>
+            <div className="order-3 flex gap-2">
               <button type="button" onClick={() => startEdit(exp)} className="text-indigo-600 hover:underline">Edit</button>
               <button type="button" onClick={() => deleteExpense(exp.id)} className="text-red-600 hover:underline">Delete</button>
-            </span>
+            </div>
           </li>
         ))}
       </ul>

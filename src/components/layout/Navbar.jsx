@@ -15,20 +15,20 @@ function Navbar({ isSidebarOpen, onToggleSidebar }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
-      <div className="flex h-16 items-center justify-between px-4 md:px-8">
-        <div className="flex items-center gap-3">
+      <div className="flex h-16 items-center justify-between gap-3 px-3 sm:px-4 md:px-8">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onToggleSidebar}
             aria-expanded={isSidebarOpen}
             aria-controls="app-sidebar"
             aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 md:hidden"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 md:hidden"
           >
             <span className="text-2xl leading-none">{isSidebarOpen ? '✕' : '☰'}</span>
           </button>
 
-          <span className="text-lg font-semibold tracking-tight text-slate-900">
+          <span className="truncate text-sm font-semibold tracking-tight text-slate-900 sm:text-lg">
             Ledger <span className="text-indigo-600">ly</span>
           </span>
         </div>
@@ -36,7 +36,7 @@ function Navbar({ isSidebarOpen, onToggleSidebar }) {
         <div
           role="img"
           aria-label={`Profile avatar for ${profile.businessName}`}
-          className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${accentStyles[profile.accentColor] || accentStyles.indigo}`}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${accentStyles[profile.accentColor] || accentStyles.indigo}`}
         >
           {initials}
         </div>

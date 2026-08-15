@@ -10,13 +10,13 @@ function MainLayout() {
   const closeSidebar = () => setIsSidebarOpen(false)
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-slate-50">
       <Navbar
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
       />
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-w-0">
         <Sidebar isOpen={isSidebarOpen} onNavigate={closeSidebar} />
 
         {isSidebarOpen && (
@@ -28,7 +28,7 @@ function MainLayout() {
           />
         )}
 
-        <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
+        <main className="min-w-0 flex-1 px-3 py-5 sm:px-4 sm:py-6 md:px-8 md:py-8">
           <Outlet />
         </main>
       </div>
