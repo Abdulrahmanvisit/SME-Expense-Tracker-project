@@ -1,7 +1,7 @@
-import categories from "../data/categories";
+import categories from '../data/categories'
 
 function getCategoryLabel(categoryId) {
-  return categories.find((c) => c.id === categoryId)?.label ?? "Uncategorized";
+  return categories.find((c) => c.id === categoryId)?.label ?? 'Uncategorized'
 }
 
-export default getCategoryLabel;
+export default getCategoryLabel
