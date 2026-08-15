@@ -1,4 +1,18 @@
+import { getProfile } from '../../services/profileService'
+import getInitials from '../../utils/getInitials'
+
+const accentStyles = {
+  indigo: 'bg-indigo-600 text-white',
+  emerald: 'bg-emerald-600 text-white',
+  amber: 'bg-amber-500 text-slate-900',
+  rose: 'bg-rose-500 text-white',
+  slate: 'bg-slate-700 text-white',
+}
+
 function Navbar({ isSidebarOpen, onToggleSidebar }) {
+  const profile = getProfile()
+  const initials = getInitials(profile.displayName)
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
       <div className="flex h-16 items-center justify-between px-4 md:px-8">
@@ -21,10 +35,10 @@ function Navbar({ isSidebarOpen, onToggleSidebar }) {
 
         <div
           role="img"
-          aria-label="Signed in user avatar"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white"
+          aria-label={`Profile avatar for ${profile.businessName}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${accentStyles[profile.accentColor] || accentStyles.indigo}`}
         >
-          AF
+          {initials}
         </div>
       </div>
     </header>

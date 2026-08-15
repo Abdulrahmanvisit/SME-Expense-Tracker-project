@@ -1,18 +1,22 @@
-import { useState } from 'react'
-import { getProfile, saveProfile } from '../services/profileService'
+import { useMemo, useState } from 'react'
+import { getProfile, saveProfile, validAccentColors } from '../services/profileService'
+import getInitials from '../utils/getInitials'
 
-function getInitials(displayName) {
-  const cleaned = displayName?.trim() || 'AF'
-  const parts = cleaned.split(/\s+/).filter(Boolean).slice(0, 2)
-
-  if (parts.length === 0) return 'AF'
-  return parts.map((part) => part[0].toUpperCase()).join('').slice(0, 2)
+const accentStyles = {
+  indigo: 'bg-indigo-600 text-white',
+  emerald: 'bg-emerald-600 text-white',
+  amber: 'bg-amber-500 text-slate-900',
+  rose: 'bg-rose-500 text-white',
+  slate: 'bg-slate-700 text-white',
 }
 
 function Profile() {
   const [profile, setProfile] = useState(() => getProfile())
   const [displayName, setDisplayName] = useState(() => getProfile().displayName)
+  const [accentColor, setAccentColor] = useState(() => getProfile().accentColor)
   const [status, setStatus] = useState('')
+
+  const initials = useMemo(() => getInitials(displayName || profile.displayName), [displayName, profile.displayName])
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -21,14 +25,14 @@ function Profile() {
     const updatedProfile = saveProfile({
       ...profile,
       displayName: trimmedValue || profile.displayName,
+      accentColor,
     })
 
     setProfile(updatedProfile)
     setDisplayName(updatedProfile.displayName)
+    setAccentColor(updatedProfile.accentColor)
     setStatus('Profile updated successfully.')
   }
-
-  const initials = getInitials(displayName || profile.displayName)
 
   return (
     <section className="space-y-6">
@@ -42,7 +46,7 @@ function Profile() {
           <div
             role="img"
             aria-label={`Profile avatar for ${profile.businessName}`}
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-lg font-semibold text-white"
+            className={`flex h-14 w-14 items-center justify-center rounded-full text-lg font-semibold ${accentStyles[profile.accentColor] || accentStyles.indigo}`}
           >
             {initials}
           </div>
@@ -71,9 +75,28 @@ function Profile() {
           />
         </div>
 
+        <div className="mt-5">
+          <p className="text-sm font-medium text-slate-700">Avatar accent</p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            {validAccentColors.map((color) => (
+              <button
+                key={color}
+                type="button"
+                aria-label={`Use ${color} accent color`}
+                onClick={() => setAccentColor(color)}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-semibold ${
+                  accentColor === color ? 'border-slate-900 ring-2 ring-slate-200' : 'border-transparent'
+                } ${accentStyles[color]}`}
+              >
+                {getInitials(displayName || profile.displayName)}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button
           type="submit"
-          className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+          className="mt-5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
         >
           Save profile
         </button>
