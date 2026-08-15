@@ -1,4 +1,5 @@
 import { useReducer, useState, useMemo } from 'react'
+import { parseISO, isValid } from 'date-fns'
 import { v4 as uuidv4 } from 'uuid'
 import categories from '../data/categories'
 import useExpenseStore from '../stores/expenseStore'
@@ -15,6 +16,21 @@ function safeText(value) {
 function safeNumber(value) {
   const numericValue = Number(value)
   return Number.isFinite(numericValue) ? numericValue : 0
+}
+
+function validateDateInput(dateString) {
+  if (!dateString) return 'Date is required.'
+
+  const match = /^\d{4}-\d{2}-\d{2}$/.exec(dateString)
+  if (!match) return 'Please choose a valid date.'
+
+  const year = Number(match[0].slice(0, 4))
+  if (year < 2000 || year > 2100) return 'Year must be between 2000 and 2100.'
+
+  const parsedDate = parseISO(dateString)
+  if (!isValid(parsedDate)) return 'Please choose a valid date.'
+
+  return ''
 }
 
 function formReducer(state, action) {
@@ -42,6 +58,7 @@ function Expenses() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [filterDate, setFilterDate] = useState('')
+  const [dateError, setDateError] = useState('')
 
   const addExpense = useExpenseStore((state) => state.addExpense)
   const deleteExpense = useExpenseStore((state) => state.deleteExpense)
@@ -66,15 +83,23 @@ function Expenses() {
     })
   }, [expenses, searchTerm, filterCategory, filterDate])
 
-  const handleChange = (e) => {
-    dispatch({ type: 'SET_FIELD', field: e.target.name, value: e.target.value })
+  const handleChange = (event) => {
+    const { name, value } = event.target
+    dispatch({ type: 'SET_FIELD', field: name, value })
+
+    if (name === 'date') {
+      setDateError(validateDateInput(value))
+    }
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const handleSubmit = (event) => {
+    event.preventDefault()
+
+    const nextDateError = validateDateInput(form.date)
+    setDateError(nextDateError)
 
     const amountValue = safeNumber(form.amount)
-    if (!amountValue || !form.categoryId || !form.date) return
+    if (nextDateError || !amountValue || !form.categoryId || !form.date) return
 
     const nextExpense = {
       ...form,
@@ -90,10 +115,12 @@ function Expenses() {
     }
 
     dispatch({ type: 'RESET' })
+    setDateError('')
   }
 
   const startEdit = (exp) => {
     setEditingId(exp.id)
+    setDateError('')
     dispatch({ type: 'LOAD', payload: exp })
   }
 
@@ -102,6 +129,9 @@ function Expenses() {
     setFilterCategory('')
     setFilterDate('')
   }
+
+  const amountPreview = form.amount === '' ? '₦0' : formatCurrency(form.amount)
+  const isSubmitDisabled = Boolean(dateError) || !form.amount || !form.categoryId || !form.date
 
   return (
     <section className="space-y-6">
@@ -112,16 +142,56 @@ function Expenses() {
           <option value="expense">Expense</option>
           <option value="income">Income</option>
         </select>
-        <input name="amount" type="number" value={form.amount} onChange={handleChange} placeholder="Amount" className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+
+        <div className="sm:col-span-1">
+          <input
+            name="amount"
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.amount}
+            onChange={handleChange}
+            placeholder="Amount"
+            aria-label="Expense amount"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <p className="mt-2 text-xs font-medium text-slate-500">Preview: {amountPreview}</p>
+        </div>
+
         <select name="categoryId" value={form.categoryId} onChange={handleChange} className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="">Select category</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.label}</option>
           ))}
         </select>
-        <input name="date" type="date" value={form.date} onChange={handleChange} className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        <input name="description" type="text" value={form.description} onChange={handleChange} placeholder="Description" className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:col-span-2" />
-        <button type="submit" className="sm:col-span-2 rounded-md bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700">
+
+        <div className="sm:col-span-1">
+          <input
+            name="date"
+            type="date"
+            value={form.date}
+            onChange={handleChange}
+            aria-label="Expense date"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          {dateError ? <p className="mt-2 text-xs font-medium text-red-600">{dateError}</p> : null}
+        </div>
+
+        <input
+          name="description"
+          type="text"
+          value={form.description}
+          onChange={handleChange}
+          placeholder="Description"
+          aria-label="Expense description"
+          className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:col-span-2"
+        />
+
+        <button
+          type="submit"
+          disabled={isSubmitDisabled}
+          className="sm:col-span-2 rounded-md bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+        >
           {editingId ? 'Update Entry' : 'Add Entry'}
         </button>
       </form>
@@ -130,17 +200,18 @@ function Expenses() {
         <input
           type="text"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(event) => setSearchTerm(event.target.value)}
           placeholder="Search by name or category"
+          aria-label="Search expenses"
           className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:col-span-2"
         />
-        <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <select value={filterCategory} onChange={(event) => setFilterCategory(event.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="">All categories</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.label}</option>
           ))}
         </select>
-        <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <input type="date" value={filterDate} onChange={(event) => setFilterDate(event.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         {(searchTerm || filterCategory || filterDate) && (
           <button type="button" onClick={clearFilters} className="sm:col-span-4 text-left text-sm text-indigo-600 hover:underline">
             Clear filters

@@ -4,6 +4,7 @@ import Dashboard from '../pages/Dashboard'
 import Expenses from '../pages/Expenses'
 import Reports from '../pages/Reports'
 import Settings from '../pages/Settings'
+import Profile from '../pages/Profile'
 import NotFound from '../pages/NotFound'
 
 function AppRoutes() {
@@ -14,6 +15,7 @@ function AppRoutes() {
         <Route path="expenses" element={<Expenses />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="profile" element={<Profile />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

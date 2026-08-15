@@ -5,6 +5,7 @@ const links = [
   { to: '/expenses', label: 'Expenses' },
   { to: '/reports', label: 'Reports' },
   { to: '/settings', label: 'Settings' },
+  { to: '/profile', label: 'Profile' },
 ]
 
 function Sidebar({ isOpen, onNavigate }) {

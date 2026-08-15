@@ -55,6 +55,13 @@ const useExpenseStore = create((set, get) => ({
       return { expenses: updated };
     }),
 
+  replaceExpenses: (expenses) =>
+    set(() => {
+      const sanitized = sanitizeExpenseList(expenses);
+      saveExpenses(sanitized);
+      return { expenses: sanitized };
+    }),
+
   clearExpenses: () =>
     set(() => {
       const updated = clearExpenses();

@@ -30,6 +30,12 @@ function Reports() {
       .sort((a, b) => b.value - a.value)
   }, [safeExpenses])
 
+  const averageSpendPerCategory = useMemo(() => {
+    if (categoryData.length === 0) return 0
+    const total = categoryData.reduce((sum, item) => sum + item.value, 0)
+    return total / categoryData.length
+  }, [categoryData])
+
   const monthlyData = useMemo(() => {
     const totals = {}
 
@@ -66,19 +72,28 @@ function Reports() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <div className="rounded-lg border border-slate-200 bg-white p-5 lg:col-span-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 lg:col-span-3" aria-label="Expenses by category chart" role="img">
           <h2 className="mb-4 text-lg font-semibold text-slate-900">Expenses by Category</h2>
           {categoryData.length === 0 ? (
             <p className="py-10 text-center text-sm text-slate-500">No expense data yet.</p>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
-                <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100}>
+                <Pie
+                  data={categoryData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label={({ name, percent }) => `${name} ${percent}%`}
+                >
                   {categoryData.map((item, index) => (
                     <Cell key={item.name} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Legend />
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -105,7 +120,7 @@ function Reports() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-5">
+      <div className="rounded-lg border border-slate-200 bg-white p-5" aria-label="Monthly income and expense chart" role="img">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Income vs Expenses by Month</h2>
         {monthlyData.length === 0 ? (
           <p className="py-10 text-center text-sm text-slate-500">No data yet.</p>
@@ -122,6 +137,12 @@ function Reports() {
             </BarChart>
           </ResponsiveContainer>
         )}
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-5">
+        <h2 className="mb-2 text-lg font-semibold text-slate-900">Average Spend per Category</h2>
+        <p className="text-2xl font-semibold text-slate-900">{formatCurrency(averageSpendPerCategory)}</p>
+        <p className="mt-1 text-sm text-slate-500">Average monthly value across the categories currently in your expense data.</p>
       </div>
     </section>
   )
