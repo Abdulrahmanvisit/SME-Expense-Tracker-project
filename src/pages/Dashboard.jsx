@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { isValid, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subWeeks, subMonths, subYears } from 'date-fns'
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subWeeks, subMonths, subYears } from 'date-fns'
 import { FiTrendingUp, FiTrendingDown, FiDollarSign, FiArrowUpRight, FiArrowDownRight } from 'react-icons/fi'
 import useExpenseStore from '../stores/expenseStore'
 import formatCurrency from '../utils/formatCurrency'
@@ -12,6 +12,19 @@ const RANGE_OPTIONS = [
   { value: 'month', label: 'This month' },
   { value: 'year', label: 'This year' },
 ]
+
+function normalizeDateValue(value) {
+  if (!value || typeof value !== 'string') return null
+
+  const trimmed = value.trim()
+  if (!trimmed) return null
+
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+  const safeValue = dateOnly ? `${trimmed}T12:00:00` : trimmed
+  const parsed = new Date(safeValue)
+
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
 
 function getRangeWindow(range) {
   const now = new Date()
@@ -64,8 +77,8 @@ function getPreviousRangeWindow(range) {
 function matchesRange(expense, range) {
   if (!expense?.date || typeof expense.date !== 'string') return false
 
-  const parsedDate = parseISO(expense.date)
-  if (!isValid(parsedDate)) return false
+  const parsedDate = normalizeDateValue(expense.date)
+  if (!parsedDate) return false
 
   const rangeWindow = getRangeWindow(range)
   if (!rangeWindow) return true
@@ -146,8 +159,8 @@ function Dashboard() {
     return [...expenses].filter((exp) => {
       if (!exp?.date || typeof exp.date !== 'string') return false
 
-      const parsedDate = parseISO(exp.date)
-      if (!isValid(parsedDate)) return false
+      const parsedDate = normalizeDateValue(exp.date)
+      if (!parsedDate) return false
 
       return parsedDate >= previousWindow.start && parsedDate <= previousWindow.end
     })
@@ -163,12 +176,15 @@ function Dashboard() {
     [previousExpenses],
   )
 
+  const currentBalance = currentIncome - currentExpense
+  const previousBalance = previousIncome - previousExpense
+
   const effectivePreviousIncome = selectedRange === 'all' ? currentIncome : previousIncome
   const effectivePreviousExpense = selectedRange === 'all' ? currentExpense : previousExpense
 
   const incomeTrend = selectedRange === 'all' ? 0 : calculatePercentChange(currentIncome, effectivePreviousIncome)
   const expenseTrend = selectedRange === 'all' ? 0 : calculatePercentChange(currentExpense, effectivePreviousExpense)
-  const balanceTrend = selectedRange === 'all' ? 0 : ((currentIncome - currentExpense) / Math.max(currentIncome, 1)) * 100 || 0
+  const balanceTrend = selectedRange === 'all' ? 0 : calculatePercentChange(currentBalance, previousBalance)
 
   const totalIncome = useExpenseStore((state) => state.getTotalIncome())
   const totalExpense = useExpenseStore((state) => state.getTotalExpense())
@@ -228,10 +244,10 @@ function Dashboard() {
         <StatCard
           icon={FiDollarSign}
           label="Remaining Balance"
-          value={balance}
-          tone={balance >= 0 ? 'indigo' : 'red'}
+          value={selectedRange === 'all' ? balance : currentBalance}
+          tone={currentBalance >= 0 ? 'indigo' : 'red'}
           trendValue={balanceTrend}
-          trendDirection={(currentIncome - currentExpense) >= 0 ? 'up' : 'down'}
+          trendDirection={currentBalance >= 0 ? 'up' : 'down'}
         />
       </div>
 
@@ -303,7 +319,7 @@ function Dashboard() {
             </div>
             <div className="rounded-md bg-slate-50 p-3">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Balance</p>
-              <p className="mt-2 text-lg font-semibold text-slate-900">{formatCurrency(balance)}</p>
+              <p className="mt-2 text-lg font-semibold text-slate-900">{formatCurrency(selectedRange === 'all' ? balance : currentBalance)}</p>
             </div>
           </div>
         </div>
